@@ -9,7 +9,7 @@ KissCsv is a fully mime (text/csv) compliant parser according to [http://tools.i
 
 ## Why make another csv parser?
 
-Both `OpenCSV` and `SimpleCSV` had way too many features for me. So I decided to make one that is compliant, faster and ... threadsafe. Along the way I fixed a few features:
+Both `OpenCSV` and `SimpleCSV` had too many features for me. So I decided to make one that is compliant, faster and ... threadsafe. Along the way I fixed a few features:
 
 - In most csv data, whitepace outside of the quoted value is to be ignored. `OpenCSV` was missing the ability to trim whitespace 
 after a closing quote and before the next separator. 
