@@ -21,7 +21,7 @@ after a closing quote and before the next separator.
  - custom quote character
  - setting to trim all fields of whitespace (even quoted fields).
   
-##What you need to know:
+## What you need to know:
 
 1) KissCsv ignores all whitespace outside of a quote value:
 
@@ -55,9 +55,9 @@ after a closing quote and before the next separator.
 
 9) KissCsv is frugal and maintains minimal state - it is very fast.
 
-#How to use
+# How to use
 
-###EXAMPLE 1
+### EXAMPLE 1
 
 The default KissParser constructor has the following settings:
 - separator = `','`
