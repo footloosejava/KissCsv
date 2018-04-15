@@ -20,28 +20,51 @@ after a closing quote and before the next separator.
  - custom field separator
  - custom quote character
  - setting to trim all fields of whitespace (even quoted fields).
-  
+ 
+##To get this Git project into your build:
+ 
+Follow instructions at [https://jitpack.io/#footloosejava/kisscsv](https://jitpack.io/#footloosejava/kisscsv) or these steps for Maven:
+ 
+Step 1. Add the JitPack repository to your build file
+
+```
+<repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+</repository>
+```
+Step 2. Add the dependency
+
+```
+<dependency>
+    <groupId>com.github.footloosejava</groupId>
+    <artifactId>kisscsv</artifactId>
+    <version>v1.0</version>
+</dependency>
+```
+
 ## What you need to know:
 
 1) KissCsv ignores all whitespace outside of a quote value:
 
-      `A,B,   "HELLO"  ,D` is parsed as {`A` | `B` | `HELLO` | `D`}
+      [`A`|`B`|` "HELLO"  `|`D`] is parsed as [`A`|`B`|`HELLO`|`D`]
 
 2) KissCsv properly handles embedded carriage returns in quoted values:
 
-      `A,B,   "HELLO\r\nWORLD"   ,D` is parsed as { `A` | `B` | `HELLO\r\nWORLD` | `D`} 
+      [`A`|`B`|`  "HELLO\r\nWORLD"   `|`D`] is parsed as [`A`|`B`|`HELLO\r\nWORLD`|`D`] 
 
-3) KissCsv properly recognizes CR or CRLF as record endings. These two are parsed as 2 records, consisting of 4 fields each:
+3) KissCsv properly recognizes `\r` or `\r\n` as record endings. These two are parsed as 2 records, consisting of 4 fields each:
 
-       `A,B,   "HELLO\r\nWORLD"   ,D[CR]E,F,G,H`
-       `A,B,   "HELLO\r\nWORLD"   ,D[CRLF]E,F,G,H`
+      [`A`|`B`|` "HELLO\r\nWORLD"  `|`D`[cr]`E`|`F`|`G`|`H`]
+      
+      [`A`|`B`|` "HELLO\r\nWORLD"  `|`D`[crlf]`E`|`F`|`G`|`H`]
       
 
 4) KissCsv meets a simple use scenario - it does not recognize or use any escape characters.
 
-5) KissCsv recognizes that doubled quotes `""` are single quotes inside a quoted value:
+5) KissCsv recognizes doubled quotes `""` as single quotes inside a quoted value:
 
-      `"A quote "" is what a quote is!"` is parsed as `A quote " is what a quote is!`
+      [`"A quote "" is what a quote is!"`] is parsed as [`A quote " is what a quote is!`]
       
 6) KissCsv parser complains if fields are malformed:
 
@@ -51,13 +74,9 @@ after a closing quote and before the next separator.
       b) malformed if non-whitespace found after closing quote
       `"HELLO" WORLD` will throw a KissException: `Record has already been closed (matched quotes found)`
 
-8) KissCsv parser is threadsafe and can be used with multiple threads without worries.
+8) KissCsv `KissParser` is memory-frugal, threadsafe and very fast.
 
-9) KissCsv is frugal and maintains minimal state - it is very fast.
-
-# How to use
-
-### EXAMPLE 1
+### EXAMPLE USE
 
 The default KissParser constructor has the following settings:
 - separator = `','`
