@@ -317,4 +317,71 @@ public class AppTest extends TestCase {
         assertArrayEquals(fields, result);
         assertArrayEquals(null, cr.readNext());
     }
+
+    public void testREADME1() {
+        String[] firstRecord = {"1", "2", "3", "4", "5", "6", "7"};
+
+        String[] secondRecord = {
+            "LU",
+            "86.25",
+            "11/4/1998",
+            "2:19PM",
+            "His name is \"BOB\"",
+            "+4.0625",
+            ""
+        };
+
+        String data = "1,2,3,4,5,6,7\n"
+            + "\"LU\",86.25,\"11/4/1998\",\"2:19PM\",\"His name is \"\"BOB\"\"\",+4.0625, \"\" ";
+
+        // The KissParser can be configured once and then used with any number of KissReaders simultaneously.
+        KissParser cp = new KissParser();
+
+        // Just like Bufferedreader, null is returned when there is no more data.
+        KissReader cr = new KissReader(new StringReader(data), cp);
+
+        assertArrayEquals(firstRecord, cr.readNext());
+        assertArrayEquals(secondRecord, cr.readNext());
+        assertArrayEquals(null, cr.readNext());
+    }
+
+    public void testQuoteCharacter1() {
+        String data = " 1,2,\"3\" ,";
+        KissParser cp = new KissParser(',', null);
+        KissReader cr = new KissReader(new StringReader(data), cp);
+
+        StringBuilder sb = new StringBuilder();
+        assertEquals(4, cr.readNext(sb::append));
+        assertEquals(" 12\"3\" ", sb.toString());
+    }
+
+    public void testQuoteCharacter2() {
+        String data = " 1,2,\"3\" ,";
+        KissParser cp = new KissParser(',', '"');
+        KissReader cr = new KissReader(new StringReader(data), cp);
+
+        StringBuilder sb = new StringBuilder();
+        assertEquals(4, cr.readNext(sb::append));
+        assertEquals(" 123", sb.toString());
+    }
+
+    public void testConsumer1() {
+        String data = "1,2,3,4,5";
+        KissParser cp = new KissParser();
+        KissReader cr = new KissReader(new StringReader(data), cp);
+
+        StringBuilder sb = new StringBuilder();
+        assertEquals(5, cr.readNext(sb::append));
+        assertEquals("12345", sb.toString());
+    }
+
+    public void testConsumer2() {
+        String data = "";
+        KissParser cp = new KissParser();
+        KissReader cr = new KissReader(new StringReader(data), cp);
+
+        StringBuilder sb = new StringBuilder();
+        assertEquals(-1, cr.readNext(sb::append));
+        assertEquals("", sb.toString());
+    }
 }

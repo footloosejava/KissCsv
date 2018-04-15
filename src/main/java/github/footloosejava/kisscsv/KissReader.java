@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
@@ -14,6 +15,8 @@ import java.util.function.Supplier;
  */
 public class KissReader implements Closeable, Supplier<String[]> {
 
+    private static final Consumer<String> NULL_CONSUMER = str -> {
+    };
     private final Reader reader;
     private final KissParser parser;
     private int skipRemainingLines;
@@ -103,21 +106,33 @@ public class KissReader implements Closeable, Supplier<String[]> {
      * @return the record as an array of String.
      */
     public String[] readNext(int expectedSize) {
+        List<String> fields = new ArrayList<>(expectedSize >= 0 ? expectedSize : 10);
+        int count = readNext(fields::add);
+        return count == -1 ? null : fields.toArray(KissParser.EMPTY_ARRAY);
+    }
+
+    /**
+     * Reads the next record as a String array.
+     *
+     * @param consumer Consumer will be called with each field in the record.
+     * @return a count of the number of fields read or -1 if EOF.
+     */
+    public int readNext(Consumer<String> consumer) {
         try {
-            String[] result;
-            int skipExpected = expectedSize;
-            while (skipRemainingLines > 0 && (result = parser.parseNext(reader, skipExpected)) != null) {
-                skipExpected = result.length;
+            while (skipRemainingLines > 0) {
+                if (parser.parseNext(reader, NULL_CONSUMER) == -1) {
+                    skipRemainingLines = 0;
+                    break;
+                }
                 recordNumber++;
                 skipRemainingLines--;
             }
 
-            // if we had a null record above due to EOF then SKIP was exhausted and can be considered zero
-            skipRemainingLines = 0;
-
-            result = parser.parseNext(reader, expectedSize);
-            recordNumber++;
-            return result;
+            int count = parser.parseNext(reader, consumer);
+            if (count != -1) {
+                recordNumber++;
+            }
+            return count;
         } catch (Exception e) {
             throw new KissException(e.getMessage() + " (rec no. " + recordNumber + ")", e);
         }

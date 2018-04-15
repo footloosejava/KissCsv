@@ -43,40 +43,41 @@ Step 2. Add the dependency
 </dependency>
 ```
 
-## What you need to know:
+## What You Need to Know:
 
-1) KissCsv ignores all whitespace outside of a quote value:
+1) If a quote character is specified, whitespace outside of a quote is ignored.
 
-      [`A`|`B`|` "HELLO"  `|`D`] is parsed as [`A`|`B`|`HELLO`|`D`]
-
+      With **`"`** quote character set, `A,B, "HELLO"  ,D` is parsed as `A,B,HELLO,D`
+      
+      With **`null`** quote character set, `A,B, "HELLO"  ,D` is parsed **as is**.
+      
 2) KissCsv properly handles embedded carriage returns in quoted values:
 
-      [`A`|`B`|`  "HELLO\r\nWORLD"   `|`D`] is parsed as [`A`|`B`|`HELLO\r\nWORLD`|`D`] 
+      `A,B,  "HELLO\r\nWORLD"   ,D` is parsed as `A,B,HELLO\r\nWORLD,D` 
 
 3) KissCsv properly recognizes `\r` or `\r\n` as record endings. These two are parsed as 2 records, consisting of 4 fields each:
 
-      [`A`|`B`|` "HELLO\r\nWORLD"  `|`D`[cr]`E`|`F`|`G`|`H`]
+      `A,B, "HELLO\r\nWORLD"  ,D`[CR]`E,F,G,H`
       
-      [`A`|`B`|` "HELLO\r\nWORLD"  `|`D`[crlf]`E`|`F`|`G`|`H`]
-      
+      `A,B, "HELLO\r\nWORLD"  ,D`[CR+LF]`E,F,G,H`      
 
 4) KissCsv meets a simple use scenario - it does not recognize or use any escape characters.
 
 5) KissCsv recognizes doubled quotes `""` as single quotes inside a quoted value:
 
-      [`"A quote "" is what a quote is!"`] is parsed as [`A quote " is what a quote is!`]
+      `"A quote "" is what a quote is!"` is parsed as `A quote " is what a quote is!`
       
-6) KissCsv parser complains if fields are malformed:
+6) KissCsv parser complains if a quote character is set and fields are malformed:
 
-      a) malformed if non-whitespace found before opening quote
-      `Hello"World"` will throw a KissException: `Character found before first quote`.
+      a) Non-whitespace found before opening quote. `Hello"World"` will 
+      throw a KissException: `Character found before first quote`.
     
-      b) malformed if non-whitespace found after closing quote
-      `"HELLO" WORLD` will throw a KissException: `Record has already been closed (matched quotes found)`
+      b) Non-whitespace found after closing quote. `"HELLO" WORLD` will 
+      throw a KissException: `Record has already been closed (matched quotes found)`
 
 8) KissCsv `KissParser` is memory-frugal, threadsafe and very fast.
 
-### EXAMPLE USE
+## Example - Reading a `String[]`
 
 The default KissParser constructor has the following settings:
 - separator = `','`
@@ -108,4 +109,29 @@ KissReader cr = new KissReader(new StringReader(data), cp);
 assertArrayEquals(firstRecord, cr.readNext());
 assertArrayEquals(secondRecord, cr.readNext());
 assertArrayEquals(null, cr.readNext());
+```
+
+## Example - Using a Consumer to Process Data
+
+Processing record data using a consumer without String[] creation.
+```
+String data = "1,2,3,4,5";
+KissParser cp = new KissParser();
+KissReader cr = new KissReader(new StringReader(data), cp);
+
+StringBuilder sb = new StringBuilder();
+assertEquals(5, cr.readNext(sb::append));
+assertEquals("12345", sb.toString());
+```
+
+If EOF, the consumer is never called and -1 is returned.
+```
+String data = "";
+KissParser cp = new KissParser();
+KissReader cr = new KissReader(new StringReader(data), cp);
+
+StringBuilder sb = new StringBuilder();
+assertEquals(-1, cr.readNext(sb::append));
+assertEquals("", sb.toString());
+}
 ```

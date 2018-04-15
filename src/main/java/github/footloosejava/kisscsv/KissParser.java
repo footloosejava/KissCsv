@@ -5,6 +5,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public final class KissParser {
 
@@ -13,7 +14,7 @@ public final class KissParser {
     public static final char DEFAULT_SEPARATOR = ',';
     public static final char DEFAULT_QUOTE_CHAR = '"';
     public static final boolean DEFAULT_TRIM_RESULTS = false;
-    private static final String[] zeroStringArray = new String[0];
+    public static final String[] EMPTY_ARRAY = new String[0];
 
     private final char separator;
     private final boolean hasquotechar;
@@ -116,20 +117,26 @@ public final class KissParser {
      * @return parsed tokens as String[]
      */
     public String[] parseNext(final Reader reader, final int expectedRecordSize) {
+        List<String> fields = new ArrayList<>(expectedRecordSize >= 0 ? expectedRecordSize : 10);
+        int count = parseNext(reader, fields::add);
+        return count == -1 ? null : fields.toArray(EMPTY_ARRAY);
+    }
 
+    /**
+     * Parses the next record (set of fields). This method makes it possible to avoid a list creation and String[] creationg with each record.
+     *
+     * @param reader   Reader to read from.
+     * @param consumer The consumer for each field in the record.
+     * @return the number of fields in the record or -1 if EOF
+     */
+    public int parseNext(final Reader reader, final Consumer<String> consumer) {
         try {
-            // check eof first
             int r = reader.read();
             if (r == -1) {
-                return null;
+                return -1;
             }
-
-            // we could use an arraylist. But that would slow the stuff down.
-            // so we use our own expanding array just to be clever and overly complicated!
-            // 10 is the default that ArrayList uses when none is supplied
-            final List<String> fields = new ArrayList<>(expectedRecordSize >= 0 ? expectedRecordSize : 10);
             final StringBuilder working = new StringBuilder();
-
+            int count = 0;
             boolean inQuotes = false;
             boolean endOfField = false;
 
@@ -165,7 +172,8 @@ public final class KissParser {
                         inQuotes = true;
                     } else if (r == separator) {
                         // add to fields
-                        fields.add(result(working, trimResults));
+                        count++;
+                        consumer.accept(result(working, trimResults));
 
                         // RESET
                         working.setLength(0);
@@ -195,6 +203,7 @@ public final class KissParser {
                             // IF WHITESPACE, WE IGNORE UNTIL SEPARATOR IS FOUND.
                             // OTHERWISE NO TEXT SHOULD COME AFTER END OF FIELD
                             throw new KissException("Non-whitespace character found after last quote in quoted value" + "\n" +
+                                "> fields found= " + count + "\n" +
                                 "> working field= " + working + "\n" +
                                 "> character found= " + ((char) r) + "\n" +
                                 "> separator= " + separator + "\n" +
@@ -212,8 +221,9 @@ public final class KissParser {
             if (inQuotes) {
                 throw new KissException("Un-terminated quoted field at end of CSV record");
             }
-            fields.add(result(working, trimResults));
-            return fields.toArray(zeroStringArray);
+            count++;
+            consumer.accept(result(working, trimResults));
+            return count;
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
